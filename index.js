@@ -68,7 +68,27 @@ app.get('/', async (request, response) => {
 
 app.get('/login', async (request, response) => {});
 
-app.post('/login', async (request, response) => {});
+app.post('/login', async (request, response) => {
+  const { email, password } = request.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return response.render('unauthenticatedIndex', {
+      errorMessage: 'Invalid credentials.',
+    });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return response.render('unauthenticatedIndex', {
+      errorMessage: 'Invalid credentials.',
+    });
+  }
+
+  request.session.user = { id: user._id, name: user.name };
+  response.redirect('/dashboard');
+});
 
 app.get('/signup', async (request, response) => {
   if (request.session.user?.id) {
