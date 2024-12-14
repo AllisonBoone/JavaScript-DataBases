@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const { request } = require('http');
 
 const userSchema = new mongoose.Schema({
   name: String,
@@ -237,6 +238,12 @@ app.post('/createPoll', async (request, response) => {
   }
 
   //TODO: If an error occurs, what should we do?
+});
+
+app.get('/logout', (request, response) => {
+  request.session.destroy(() => {
+    response.redirect('/');
+  });
 });
 
 app.use((request, response) => {
