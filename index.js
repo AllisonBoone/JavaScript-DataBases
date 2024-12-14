@@ -57,7 +57,7 @@ app.ws('/ws', (socket, request) => {
       const { pollId, selectedOption } = JSON.parse(message);
 
       const poll = await Poll.findById(pollId);
-      const option = poll.options.find((o) => o.answer === selectOption);
+      const option = poll.options.find((o) => o.answer === selectedOption);
 
       if (option) {
         option.votes += 1;
