@@ -55,22 +55,33 @@ app.ws('/ws', (socket, request) => {
   socket.on('message', async (message) => {
     try {
       const { pollId, selectedOption } = JSON.parse(message);
+      const userId = request.session?.user?.id;
+
+      if (!userId) {
+        console.error('User not authenticated.');
+        return;
+      }
 
       const poll = await Poll.findById(pollId);
+
+      if (!poll) {
+        console.error('Poll not found');
+        return;
+      }
+
       const option = poll.options.find((o) => o.answer === selectedOption);
 
       if (option) {
-        option.votes += 1;
-
-        const userId = request.session.user?.id;
-
         if (!poll.voters.includes(userId)) {
+          option.votes += 1;
           poll.voters.push(userId);
           await poll.save();
 
           connectedClients.forEach((client) => {
             client.send(JSON.stringify({ type: 'UPDATE_VOTE', poll }));
           });
+        } else {
+          console.log('Duplicate vote from user: ', userId);
         }
       }
     } catch (error) {
