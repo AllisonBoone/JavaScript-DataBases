@@ -109,7 +109,21 @@ app.get('/dashboard', async (request, response) => {
   return response.render('index/authenticatedIndex', { polls });
 });
 
-app.get('/profile', async (request, response) => {});
+app.get('/profile', async (request, response) => {
+  if (!request.session.user?.id) {
+    return response.redirect('/');
+  }
+
+  const user = await User.findById(request.session.user.id);
+  const pollsCreated = await Poll.countDocuments({ createdBy: user._id });
+  const pollsVotedIn = 0;
+
+  response.render('profile', {
+    user,
+    pollsCreated,
+    pollsVotedIn,
+  });
+});
 
 app.get('/createPoll', async (request, response) => {
   if (!request.session.user?.id) {
