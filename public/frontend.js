@@ -18,6 +18,24 @@ socket.addEventListener('message', (event) => {
   }
 });
 
+socket.addEventListener('error', (error) => {
+  console.error('WebSocket error has occurred: ', error);
+});
+
+socket.addEventListener('close', () => {
+  console.warn('WebSocket connection closed, refresh the page.');
+  const messageContainer = document.getElementById('messages');
+
+  if (messageContainer) {
+    messageContainer.innerHTML =
+      '<p class="error">Connection lost... Please refresh the page.</p>';
+  }
+
+  document.querySelectorAll('button:disabled').forEach((button) => {
+    button.disabled = false;
+  });
+});
+
 /**
  * Handles adding a new poll to the page when one is received from the server
  *
@@ -25,38 +43,51 @@ socket.addEventListener('message', (event) => {
  */
 function onNewPollAdded(data) {
   //TODO: Fix this to add the new poll to the page
+  if (!data || !data._id || !data.question || !data.options) {
+    console.error('Invalid poll data: ', data);
+    return;
+  }
 
   const pollContainer = document.getElementById('polls');
+
+  if (!pollContainer) {
+    console.error('Poll container not found.');
+    return;
+  }
+
   const newPoll = document.createElement('div');
   newPoll.className = 'poll-container';
-  newPoll.dataset.pollId = poll._id;
+  newPoll.dataset.pollId = data._id;
 
   newPoll.innerHTML = `
-        <h2>${poll.question}</h2>
-        <ul class="poll-options">
-            ${poll.options
+        <h2>${data.question}</h2>
+            <ul class="poll-options">
+            ${data.options
               .map(
                 (option) => `
                     <li>
-                        <form class="poll-form">
-                            <input type="hidden" name="poll-id" value="${poll._id}" />
-                            <button type="submit" value="${option.answer}">
-                                ${option.answer} (${option.votes})
-                            </button>
-                        </form>
+                    <form class="poll-form">
+                        <input type="hidden" name="poll-id" value="${data._id}" />
+                        <button type="submit" value="${option.answer}">
+                        ${option.answer} (${option.votes})
+                        </button>
+                    </form>
                     </li>`
               )
               .join('')}
-        </ul>
+            </ul>
     `;
 
   pollContainer.appendChild(newPoll);
 
   //TODO: Add event listeners to each vote button. This code might not work, it depends how you structure your polls on the poll page. However, it's left as an example
   //      as to what you might want to do to get clicking the vote options to actually communicate with the server
-  newPoll.querySelectorAll('.poll-form').forEach((pollForm) => {
-    pollForm.addEventListener('submit', onVoteClicked);
-  });
+  newPoll
+    .querySelectorAll('.poll-form:not([data-listener-added])')
+    .forEach((pollForm) => {
+      pollForm.addEventListener('submit', onVoteClicked);
+      pollForm.setAttribute('data-listener-added', true);
+    });
 }
 
 /**
@@ -73,7 +104,9 @@ function onIncomingVote(poll) {
   }
 
   poll.options.forEach((option) => {
-    const button = pollElement.querySelector(`button[value=${option.answer}"]`);
+    const button = pollElement.querySelector(
+      `button[value="${option.answer}"]`
+    );
 
     if (button) {
       button.innerHTML = `${option.answer} (${option.votes})`;
@@ -94,13 +127,28 @@ function onVoteClicked(event) {
   const pollId = formData.get('poll-id');
   const selectedOption = event.submitter.value;
 
+  event.submitter.disabled = true;
+
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(
+      JSON.stringify({
+        pollId: pollId,
+        selectedOption: selectedOption,
+      })
+    );
+
+    const feedback = document.createElement('p');
+    feedback.className = 'vote-feedback';
+    feedback.innerText = 'Vote Submitted Successfully!';
+    event.target.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 3000);
+  } else {
+    console.error('WebSocket not open, unable to send vote.');
+    alert('Connection error, try again later.');
+    event.submitter.disabled = false;
+  }
+
   //TOOD: Tell the server the user voted
-  socket.send(
-    JSON.stringify({
-      pollId: pollId,
-      selectedOption: selectedOption,
-    })
-  );
 }
 
 //Adds a listener to each existing poll to handle things when the user attempts to vote
