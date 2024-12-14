@@ -22,6 +22,7 @@ const pollSchema = new mongoose.Schema({
     },
   ],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  voters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 });
 
 const Poll = mongoose.model('Poll', pollSchema);
@@ -53,7 +54,7 @@ app.ws('/ws', (socket, request) => {
 
   socket.on('message', async (message) => {
     try {
-      const { pollId, selectOption } = JSON.parse(message);
+      const { pollId, selectedOption } = JSON.parse(message);
 
       const poll = await Poll.findById(pollId);
       const option = poll.options.find((o) => o.answer === selectOption);
@@ -136,11 +137,9 @@ app.post('/signup', async (request, response) => {
     response.redirect('/dashboard');
   } catch (error) {
     console.error('Error during signup: ', error);
-    response
-      .status(500)
-      .render('signup', {
-        errorMessage: 'An error occurred during signup. Please try again.',
-      });
+    response.status(500).render('signup', {
+      errorMessage: 'An error occurred during signup. Please try again.',
+    });
   }
 });
 
@@ -230,18 +229,6 @@ mongoose
  * @param {[answer: string, votes: number]} pollOptions The various answers the poll allows and how many votes each answer should start with
  * @returns {string?} An error message if an error occurs, or null if no error occurs.
  */
-async function onCreateNewPoll(question, pollOptions) {
-  try {
-    //TODO: Save the new poll to MongoDB
-  } catch (error) {
-    console.error(error);
-    return 'Error creating the poll, please try again';
-  }
-
-  //TODO: Tell all connected sockets that a new poll was added
-
-  return null;
-}
 
 /**
  * Handles processing a new vote on a poll
@@ -252,9 +239,3 @@ async function onCreateNewPoll(question, pollOptions) {
  * @param {string} pollId The ID of the poll that was voted on
  * @param {string} selectedOption Which option the user voted for
  */
-async function onNewVote(pollId, selectedOption) {
-  try {
-  } catch (error) {
-    console.error('Error updating poll:', error);
-  }
-}
