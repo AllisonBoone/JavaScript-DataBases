@@ -35,6 +35,12 @@ const MONGO_URI = process.env.MONGO_URL;
 const app = express();
 expressWs(app);
 
+app.use((req, res, next) => {
+  res.locals.WEBSOCKET_URL =
+    process.env.WEBSOCKET_URL || 'ws://localhost:3000/ws';
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
