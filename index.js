@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const { request } = require('http');
+require('dotenv').config();
 
 const userSchema = new mongoose.Schema({
   name: String,
@@ -28,9 +29,9 @@ const pollSchema = new mongoose.Schema({
 
 const Poll = mongoose.model('Poll', pollSchema);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 //TODO: Update this URI to match your own MongoDB setup
-const MONGO_URI = 'mongodb://localhost:27017/keyin_test';
+const MONGO_URI = process.env.MONGO_URL;
 const app = express();
 expressWs(app);
 
@@ -41,7 +42,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(
   session({
-    secret: 'voting-app-secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
