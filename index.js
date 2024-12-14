@@ -103,7 +103,9 @@ app.get('/', async (request, response) => {
   response.render('index/unauthenticatedIndex', {});
 });
 
-app.get('/login', async (request, response) => {});
+app.get('/login', async (request, response) => {
+  response.render('login', { errorMessage: null });
+});
 
 app.post('/login', async (request, response) => {
   const { email, password } = request.body;
