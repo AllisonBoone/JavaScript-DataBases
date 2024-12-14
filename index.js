@@ -127,21 +127,25 @@ app.post('/createPoll', async (request, response) => {
     votes: 0,
   }));
 
-  const poll = new Poll({
-    question,
-    options: formattedOptions,
-    createdBy: request.session.user.id,
-  });
+  try {
+    const poll = new Poll({
+      question,
+      options: formattedOptions,
+      createdBy: request.session.user.id,
+    });
 
-  await poll.save();
+    await poll.save();
 
-  connectedClients.forEach((socket) => {
-    socket.send(JSON.stringify({ type: 'NEW_POLL', poll }));
-  });
+    connectedClients.forEach((socket) => {
+      socket.send(JSON.stringify({ type: 'NEW_POLL', poll }));
+    });
 
-  response.redirect('/dashboard');
+    response.redirect('/dashboard');
+  } catch (error) {
+    console.log('Error creating poll: ', error);
+    response.status(500).send('Error creating poll. PLease try again...');
+  }
 
-  const pollCreationError = onCreateNewPoll(question, formattedOptions);
   //TODO: If an error occurs, what should we do?
 });
 
