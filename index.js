@@ -116,6 +116,34 @@ app.get('/signup', async (request, response) => {
   return response.render('signup', { errorMessage: null });
 });
 
+app.post('/signup', async (request, response) => {
+  const { name, email, password } = request.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return response.render('signup', {
+        errorMessage: 'Email is already registered.',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({ name, email, password: hashedPassword });
+    await user.save();
+
+    request.session.user = { id: user._id, name: user.name };
+    response.redirect('/dashboard');
+  } catch (error) {
+    console.error('Error during signup: ', error);
+    response
+      .status(500)
+      .render('signup', {
+        errorMessage: 'An error occurred during signup. Please try again.',
+      });
+  }
+});
+
 app.get('/dashboard', async (request, response) => {
   if (!request.session.user?.id) {
     return response.redirect('/');
@@ -132,15 +160,20 @@ app.get('/profile', async (request, response) => {
     return response.redirect('/');
   }
 
-  const user = await User.findById(request.session.user.id);
-  const pollsCreated = await Poll.countDocuments({ createdBy: user._id });
-  const pollsVotedIn = 0;
+  try {
+    const user = await User.findById(request.session.user.id);
+    const pollsCreated = await Poll.countDocuments({ createdBy: user._id });
+    const pollsVotedIn = 0;
 
-  response.render('profile', {
-    user,
-    pollsCreated,
-    pollsVotedIn,
-  });
+    response.render('profile', {
+      user,
+      pollsCreated,
+      pollsVotedIn,
+    });
+  } catch (error) {
+    console.error('Error fetching profile data: ', error);
+    response.status(500).send('Error fetching profile data.');
+  }
 });
 
 app.get('/createPoll', async (request, response) => {
