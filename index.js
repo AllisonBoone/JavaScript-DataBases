@@ -192,6 +192,11 @@ app.get('/createPoll', async (request, response) => {
 // Poll creation
 app.post('/createPoll', async (request, response) => {
   const { question, options } = request.body;
+
+  if (!options || options.length === 0) {
+    return response.status(400).send('Poll options can not be empty.');
+  }
+
   const formattedOptions = options.map((option) => ({
     answer: option,
     votes: 0,
@@ -217,6 +222,10 @@ app.post('/createPoll', async (request, response) => {
   }
 
   //TODO: If an error occurs, what should we do?
+});
+
+app.use((request, response) => {
+  response.status(404).render('404', { errorMessage: 'Page not found' });
 });
 
 mongoose
