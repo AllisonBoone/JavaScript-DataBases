@@ -31,9 +31,9 @@ socket.addEventListener('close', () => {
       '<p class="error">Connection lost... Please refresh the page.</p>';
   }
 
-  document.querySelectorAll('button:disabled').forEach((button) => {
-    button.disabled = false;
-  });
+  setTimeout(() => {
+    location.reload();
+  }, 5000);
 });
 
 /**
@@ -137,10 +137,16 @@ function onVoteClicked(event) {
       })
     );
 
+    const existingFeedback = event.target.querySelector('.vote-feedback');
+    if (existingFeedback) {
+      existingFeedback.remove();
+    }
+
     const feedback = document.createElement('p');
     feedback.className = 'vote-feedback';
-    feedback.innerText = 'Vote Submitted Successfully!';
+    feedback.innerText = 'Vote submitted successfully!';
     event.target.appendChild(feedback);
+
     setTimeout(() => feedback.remove(), 3000);
   } else {
     console.error('WebSocket not open, unable to send vote.');
