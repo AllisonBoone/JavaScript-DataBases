@@ -229,7 +229,10 @@ app.post('/createPoll', async (request, response) => {
     response.redirect('/dashboard');
   } catch (error) {
     console.log('Error creating poll: ', error);
-    response.status(500).send('Error creating poll. PLease try again...');
+    response.render('createPoll', {
+      errorMessage:
+        'Error occurred while creating the poll. Please try again...',
+    });
   }
 
   //TODO: If an error occurs, what should we do?
