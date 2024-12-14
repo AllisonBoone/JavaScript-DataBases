@@ -52,10 +52,28 @@ app.ws('/ws', (socket, request) => {
   connectedClients.push(socket);
 
   socket.on('message', async (message) => {
-    const data = JSON.parse(message);
+    try {
+      const { pollId, selectOption } = JSON.parse(message);
+
+      const poll = await Poll.findById(pollId);
+      const option = poll.options.find((o) => o.answer === selectOption);
+
+      if (option) {
+        option.votes += 1;
+        await poll.save();
+
+        connectedClients.forEach((client) => {
+          client.send(JSON.stringify({ type: 'UPDATE_VOTE', poll }));
+        });
+      }
+    } catch (error) {
+      console.error('Error processing vote: ', error);
+    }
   });
 
-  socket.on('close', async (message) => {});
+  socket.on('close', () => {
+    connectedClients = connectedClients.filter((client) => client !== socket);
+  });
 });
 
 app.get('/', async (request, response) => {
