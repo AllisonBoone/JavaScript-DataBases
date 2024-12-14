@@ -122,10 +122,24 @@ app.get('/createPoll', async (request, response) => {
 // Poll creation
 app.post('/createPoll', async (request, response) => {
   const { question, options } = request.body;
-  const formattedOptions = Object.values(options).map((option) => ({
+  const formattedOptions = options.map((option) => ({
     answer: option,
     votes: 0,
   }));
+
+  const poll = new Poll({
+    question,
+    options: formattedOptions,
+    createdBy: request.session.user.id,
+  });
+
+  await poll.save();
+
+  connectedClients.forEach((socket) => {
+    socket.send(JSON.stringify({ type: 'NEW_POLL', poll }));
+  });
+
+  response.redirect('/dashboard');
 
   const pollCreationError = onCreateNewPoll(question, formattedOptions);
   //TODO: If an error occurs, what should we do?
