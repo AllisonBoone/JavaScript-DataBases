@@ -113,15 +113,15 @@ app.post('/login', async (request, response) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return response.render('unauthenticatedIndex', {
-      errorMessage: 'Invalid credentials.',
+    return response.render('login', {
+      errorMessage: 'Invalid email or password.',
     });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return response.render('unauthenticatedIndex', {
-      errorMessage: 'Invalid credentials.',
+    return response.render('login', {
+      errorMessage: 'Invalid email or password.',
     });
   }
 
@@ -208,8 +208,16 @@ app.get('/createPoll', async (request, response) => {
 app.post('/createPoll', async (request, response) => {
   const { question, options } = request.body;
 
-  if (!options || options.length === 0) {
-    return response.status(400).send('Poll options can not be empty.');
+  if (!question || !question.trim()) {
+    return response.render('createPoll', {
+      errorMessage: 'The question cannot be empty.',
+    });
+  }
+
+  if (!options || options.length === 0 || options.some((opt) => !opt.trim())) {
+    return response.render('createPoll', {
+      errorMessage: 'All options must be text.',
+    });
   }
 
   const formattedOptions = options.map((option) => ({
