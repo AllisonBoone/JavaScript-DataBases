@@ -61,11 +61,17 @@ app.ws('/ws', (socket, request) => {
 
       if (option) {
         option.votes += 1;
-        await poll.save();
 
-        connectedClients.forEach((client) => {
-          client.send(JSON.stringify({ type: 'UPDATE_VOTE', poll }));
-        });
+        const userId = request.session.user?.id;
+
+        if (!poll.voters.includes(userId)) {
+          poll.voters.push(userId);
+          await poll.save();
+
+          connectedClients.forEach((client) => {
+            client.send(JSON.stringify({ type: 'UPDATE_VOTE', poll }));
+          });
+        }
       }
     } catch (error) {
       console.error('Error processing vote: ', error);
@@ -162,7 +168,7 @@ app.get('/profile', async (request, response) => {
   try {
     const user = await User.findById(request.session.user.id);
     const pollsCreated = await Poll.countDocuments({ createdBy: user._id });
-    const pollsVotedIn = 0;
+    const pollsVotedIn = await Poll.countDocuments({ voters: user._id });
 
     response.render('profile', {
       user,
